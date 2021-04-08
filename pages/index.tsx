@@ -9,9 +9,8 @@ const clientId = "252186586352-o400n6bsvfn9iv42jd6nh8qp4ehuhl37.apps.googleuserc
 
 
 
-function onGoogleFailure(err, details): void {
+function onGoogleFailure(err): void {
   console.log(err);
-  console.log(details);
 }
 
 
