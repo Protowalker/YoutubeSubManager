@@ -4,5 +4,5 @@ module.exports = {
     images: {
         domains: ['yt3.ggpht.com'],
     },
-    basePath: ghPages ? '/YoutubeSubManager' : ''
+    basePath: '/YoutubeSubManager'
 };
