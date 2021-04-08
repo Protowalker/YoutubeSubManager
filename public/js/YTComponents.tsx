@@ -10,13 +10,6 @@ interface YoutubeChannel {
     etag: string,
     id: string,
     kind: string,
-    contentDetails: {
-        relatedPlaylists: {
-            likes: string,
-            favorites: string,
-            uploads: string
-        }
-    }
     snippet: {
         title: string
         channelId: string,
@@ -62,7 +55,7 @@ export class YoutubeChannelListing extends React.Component<{channel: YoutubeChan
 
                 <Grid container item alignItems="center">
                     <Grid item>
-                        <Image src={this.props.channel.snippet.thumbnails.default.url} />
+                        <img src={this.props.channel.snippet.thumbnails.default.url} />
                         <style jsx>{`
                             border-radius: 100%;
                             scale: 75%;
@@ -132,7 +125,6 @@ const subscriptionFetcher = async (...args): Promise<YoutubeChannel[]> => {
             page = await gapi.client['youtube'].subscriptions.list({
                 "part": [
                     "snippet",
-                    "contentDetails"
                 ],
                 order: "alphabetical",
                 maxResults: "50",
@@ -145,7 +137,8 @@ const subscriptionFetcher = async (...args): Promise<YoutubeChannel[]> => {
 
         subs = lodash.uniqBy(subs, sub => sub['id']);
         for(let sub of subs) {
-            let most_recent_videos = await getRecentVideos(sub.contentDetails.relatedPlaylists.uploads);
+            let uploads = await getUploads(sub.snippet.resourceId.channelId);
+            let most_recent_videos = await getRecentVideos(uploads);
             sub.most_recent_videos = most_recent_videos;
         }
         return subs;
@@ -167,9 +160,17 @@ interface Video {
     liveBroadcastContent: string
 }
 
+async function getUploads(channelId: string): Promise<string> {
+    let channel = await gapi.client['youtube'].channels.list({
+        part: ['contentDetails'],
+        id: channelId
+    });
+    return channel.result.items[0].contentDetails.relatedPlaylists.uploads;
+}
+
 async function getRecentVideos(uploadsId: string): Promise<Array<Video>> {
 
-    let result = await gapi.client['youtube'].playlistItems({part: ["snippet"], playlistId: uploadsId});
+    let result = await gapi.client['youtube'].playlistItems.list({part: ["snippet"], playlistId: uploadsId});
     if(result !== undefined) {
         let items = result.result.items;
         return items.map(i => i.snippet);
@@ -189,6 +190,8 @@ function useSubscriptions(): {subscriptions: Array<YoutubeChannel>, isLoading: b
     });
 
 
+    if(error)
+        console.error(error);
     return {
       subscriptions: data,
       isLoading: !error && !data,
