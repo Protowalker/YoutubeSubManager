@@ -5,4 +5,5 @@ module.exports = {
         domains: ['yt3.ggpht.com'],
     },
     assetPrefix: ghPages ? '/YoutubeSubManager/' : '',
+    basePath: ghPages ? '/YoutubeSubManager/' : ''
 }
