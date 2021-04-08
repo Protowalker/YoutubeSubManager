@@ -36,7 +36,7 @@ export default class Home extends React.Component<{}, HomeState> {
     return (
     <>
       <Head>
-        <script type="text/javascript" src="/js/googleapi.js"></script>
+        <script type="text/javascript" src="js/googleapi.js"></script>
       </Head>
       <YoutubeLogin isLoggedIn={this.state.loggedIn} onLoginSuccess={this.onLoginSuccess} onLogoutSuccess={this.onLogoutSuccess}/>
       <YoutubeChannelListings isLoggedIn={this.state.loggedIn}/>
