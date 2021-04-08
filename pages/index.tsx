@@ -9,8 +9,9 @@ const clientId = "252186586352-o400n6bsvfn9iv42jd6nh8qp4ehuhl37.apps.googleuserc
 
 
 
-function onGoogleFailure(): void {
-  alert("login failed");
+function onGoogleFailure(err, details): void {
+  console.log(err);
+  console.log(details);
 }
 
 
