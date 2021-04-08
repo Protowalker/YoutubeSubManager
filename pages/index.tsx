@@ -2,7 +2,7 @@ import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import GoogleLogin, { GoogleLoginResponse, GoogleLogout } from 'react-google-login';
 import React, {useState} from 'react';
-import {YoutubeChannelListing, YoutubeChannelListings} from '../stuff/js/YTComponents';
+import {YoutubeChannelListing, YoutubeChannelListings} from '../public/js/YTComponents';
 import 'fontsource-roboto';
 
 const clientId = "252186586352-o400n6bsvfn9iv42jd6nh8qp4ehuhl37.apps.googleusercontent.com";
@@ -36,7 +36,7 @@ export default class Home extends React.Component<{}, HomeState> {
     return (
     <>
       <Head>
-        <script type="text/javascript" src="js/googleapi.js"></script>
+        <script type="text/javascript" src="/js/googleapi.js"></script>
       </Head>
       <YoutubeLogin isLoggedIn={this.state.loggedIn} onLoginSuccess={this.onLoginSuccess} onLogoutSuccess={this.onLogoutSuccess}/>
       <YoutubeChannelListings isLoggedIn={this.state.loggedIn}/>
