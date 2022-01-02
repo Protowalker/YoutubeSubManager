@@ -1,6 +1,7 @@
 import {
   Avatar,
   Box,
+  Button,
   Grid,
   GridItem,
   Heading,
@@ -8,18 +9,22 @@ import {
   LinkOverlay,
   Text,
 } from "@chakra-ui/react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import useSWR from "swr";
+import { Subscription } from "../Hooks/useSubscriptions";
 import { YoutubeChannel } from "../Interfaces/YoutubeInterfaces";
 
 export default function YoutubeChannelListing(props: {
-  channel: YoutubeChannel;
+  subscription: Subscription;
 }) {
   const {
     channel: channelFeed,
     isLoading,
     error,
-  } = useChannel(props.channel.snippet.resourceId.channelId);
+  } = useChannel(props.subscription.snippet.resourceId.channelId);
+
+  const [subscribed, setSubscribed] = useState(true);
+  const [processingOperation, setProcessingOperation] = useState(false);
 
   if (isLoading) return <>loading</>;
 
@@ -36,7 +41,12 @@ export default function YoutubeChannelListing(props: {
       bgColor="red.700"
       p="1rem"
     >
-      <a href={channelFeed.url} target="_blank" rel="noopener noreferrer">
+      <a
+        href={channelFeed.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={channelFeed.name}
+      >
         <GridItem
           display="flex"
           flexDirection="column"
@@ -44,10 +54,7 @@ export default function YoutubeChannelListing(props: {
           justifyContent="space-between"
           colSpan={1}
         >
-          <Avatar
-            src={props.channel.snippet.thumbnails.default.url}
-            size="xl"
-          />
+          <Avatar src={props.subscription.snippet.thumbnails.default.url} />
           <Heading size="md" textAlign="center">
             {channelFeed.name}
           </Heading>
@@ -61,27 +68,67 @@ export default function YoutubeChannelListing(props: {
           colSpan={2}
           justifySelf="stretch"
         >
-        <a href={channelFeed.url}  target="_blank" rel="noopener noreferrer">
-          <Box pb="56.25%" overflow="hidden" position="relative">
-            <Box
-              position="absolute"
-              top="-16.75%"
-              bottom="0"
-              left="0"
-              right="0"
-            >
-              <Image src={video.thumbnail} />
+          <a
+            href={channelFeed.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={video.title}
+          >
+            <Box pb="56.25%" overflow="hidden" position="relative">
+              <Box
+                position="absolute"
+                top="-16.75%"
+                bottom="0"
+                left="0"
+                right="0"
+              >
+                <Image src={video.thumbnail} />
+              </Box>
             </Box>
-          </Box>
-          <Text textOverflow="ellipsis" noOfLines={1}>
-            {video.title}
-          </Text>
-        </a>
+            <Text textOverflow="ellipsis" noOfLines={1}>
+              {video.title}
+            </Text>
+          </a>
         </GridItem>
       ))}
+      <GridItem>
+        <Button
+          bgColor={subscribed ? "red.800" : "gray.300"}
+          onClick={(ev) => {
+              if(processingOperation === true)
+              return;
+              setProcessingOperation(true);
+              if(subscribed === true) {
+                  unsubscribeFromChannel(props.subscription.id).then(() => {
+                      setSubscribed(false);
+                      setProcessingOperation(false);
+                  });
+              } else {
+                  subscribeToChannel(props.subscription).then(() => {
+                      setSubscribed(true);
+                      setProcessingOperation(false);
+                  });
+              }
+          }}
+        >
+          {processingOperation ? "Processing..." : subscribed ? "Unsubscribe" : "Subscribe"}
+        </Button>
+      </GridItem>
     </Grid>
   );
 }
+
+const unsubscribeFromChannel = (subscriptionId: string) => {
+  console.log(`subscription id: ${subscriptionId}`);
+  return gapi.client.youtube.subscriptions.delete({ id: subscriptionId });
+};
+
+const subscribeToChannel = (subscription: Subscription) => {
+  return gapi.client.youtube.subscriptions.insert({
+    part: ["id"],
+    resource: subscription,
+  });
+};
 
 const useChannel = (channelId: string) => {
   const feed = useCallback(async () => {

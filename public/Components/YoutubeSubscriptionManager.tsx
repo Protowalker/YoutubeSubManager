@@ -19,7 +19,7 @@ export default function YoutubeSubscriptionManager() {
   return (
     <VStack>
       {subscriptions.map((sub) => (
-        <YoutubeChannelListing channel={sub} key={sub.snippet.resourceId.channelId} />
+        <YoutubeChannelListing subscription={sub} key={sub.snippet.resourceId.channelId} />
       ))}
     </VStack>
   );

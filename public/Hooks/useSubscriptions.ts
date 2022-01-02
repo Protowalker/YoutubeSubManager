@@ -2,11 +2,15 @@ import { promisify } from "util";
 import { YoutubeChannel } from "../Interfaces/YoutubeInterfaces";
 import {prop, uniqBy} from "ramda";
 import useSWR from "swr";
+import { SuspenseProps } from "react";
 
-const subscriptionFetcher = async (): Promise<YoutubeChannel[]> => {
+
+export type Subscription = gapi.client.youtube.Subscription;
+
+const subscriptionFetcher = async (): Promise<Subscription[]> => {
     if(typeof gapi.client === 'undefined')
         await promisify(gapi.load)("client");
-    if(typeof gapi.client['youtube'] === 'undefined')
+    if(typeof gapi.client.youtube === 'undefined')
         await gapi.client.load('youtube', 'v3');
 
     let page = await gapi.client['youtube'].subscriptions.list({
@@ -14,24 +18,22 @@ const subscriptionFetcher = async (): Promise<YoutubeChannel[]> => {
             "snippet",
             "contentDetails"
         ],
-        maxResults: "50",
+        maxResults: 50,
         "mine": true,
-    });
-    page = page.result;
+    }).then(resp => resp.result);
     if (page !== undefined) {
-        let subs: Array<YoutubeChannel> = page.items;
+        let subs = page.items;
         while (page.nextPageToken !== undefined) {
-            page = await gapi.client['youtube'].subscriptions.list({
+            page = await gapi.client.youtube.subscriptions.list({
                 "part": [
                     "snippet",
                     "contentDetails"
                 ],
                 order: "alphabetical",
-                maxResults: "50",
+                maxResults: 50,
                 pageToken: page.nextPageToken,
                 "mine": true,
-            });
-            page = page.result;
+            }).then(resp => resp.result);
             subs = subs.concat(page.items);
         }
 
@@ -43,7 +45,7 @@ const subscriptionFetcher = async (): Promise<YoutubeChannel[]> => {
 
 
 
-export function useSubscriptions(): {subscriptions: Array<YoutubeChannel>, isLoading: boolean, isError: Error} {
+export function useSubscriptions(): {subscriptions: Array<Subscription>, isLoading: boolean, isError: Error} {
     const { data, error, mutate} = useSWR("/", subscriptionFetcher, {
         revalidateOnFocus: false,
         revalidateOnMount: true,
