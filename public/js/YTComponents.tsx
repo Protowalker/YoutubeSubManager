@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {Box, Grid, Container, makeStyles} from '@material-ui/core';
 import useSWR from 'swr';
 import {promisify} from 'util';
-import Image from 'material-ui-image';
 import lodash from 'lodash';
 
 
@@ -49,12 +48,15 @@ export class YoutubeChannelListing extends React.Component<{channel: YoutubeChan
         };
     }
     
-    render() {        
+    render() { 
+        if(!this.props.channel.most_recent_videos)
+            return null;
+
         return (
             <>
 
-                <Grid container item alignItems="center">
-                    <Grid item>
+                <Grid container alignItems="center" spacing={3}>
+                    <Grid item xs={1}>
                         <img src={this.props.channel.snippet.thumbnails.default.url} />
                         <style jsx>{`
                             border-radius: 100%;
@@ -62,9 +64,14 @@ export class YoutubeChannelListing extends React.Component<{channel: YoutubeChan
                         `}
                         </style>
                     </Grid>
-                    <YoutubeVideo video={this.props.channel.most_recent_videos[0]}/>
-                    <YoutubeVideo video={this.props.channel.most_recent_videos[1]}/>
-                    <YoutubeVideo video={this.props.channel.most_recent_videos[2]}/>
+                    <Grid container direction="column" alignItems="center">
+                        <Grid container direction="row" spacing={1}>
+                            <YoutubeVideo video={this.props.channel.most_recent_videos[0]}/>
+                            <YoutubeVideo video={this.props.channel.most_recent_videos[1]}/>
+                            <YoutubeVideo video={this.props.channel.most_recent_videos[2]}/>
+                        </Grid>
+                        <p>Most Recent Videos</p>
+                    </Grid>
              
                 </Grid>
             </>
@@ -73,14 +80,17 @@ export class YoutubeChannelListing extends React.Component<{channel: YoutubeChan
 }
 
 export function YoutubeVideo(props: {video: Video}): React.ReactElement {
+    if(props.video == undefined)
+        return null;
+
     return <Grid item>
+            <img src={props.video.thumbnails.default.url} />
         </Grid>;
 }
 
 
 
 export function YoutubeChannelListings(props: {isLoggedIn: boolean}): React.ReactElement {
-
     if(typeof window === 'undefined')
         return null;
 
@@ -91,7 +101,6 @@ export function YoutubeChannelListings(props: {isLoggedIn: boolean}): React.Reac
 
     if(isLoading) return <p>loading</p>;
     if(isError) return <p>error</p>;
-
     
     return (
         <Grid container direction="column">
@@ -103,8 +112,13 @@ export function YoutubeChannelListings(props: {isLoggedIn: boolean}): React.Reac
     );
 }
 
+let hasBeenCalled = false;
 
 const subscriptionFetcher = async (...args): Promise<YoutubeChannel[]> => {
+    if(hasBeenCalled)
+        return [];
+        
+    console.log("this got called");
     if(typeof gapi.client === 'undefined')
         await promisify(gapi.load)("client");
     if(typeof gapi.client['youtube'] === 'undefined')
@@ -113,7 +127,6 @@ const subscriptionFetcher = async (...args): Promise<YoutubeChannel[]> => {
     let page = await gapi.client['youtube'].subscriptions.list({
         "part": [
             "snippet",
-            "contentDetails"
         ],
         maxResults: "50",
         "mine": true,
@@ -136,11 +149,17 @@ const subscriptionFetcher = async (...args): Promise<YoutubeChannel[]> => {
         }
 
         subs = lodash.uniqBy(subs, sub => sub['id']);
+        let promises = [];
         for(let sub of subs) {
-            let uploads = await getUploads(sub.snippet.resourceId.channelId);
-            let most_recent_videos = await getRecentVideos(uploads);
-            sub.most_recent_videos = most_recent_videos;
+            let promise = async () => {
+                let uploads = await getUploads(sub.snippet.resourceId.channelId);
+                let most_recent_videos = await getRecentVideos(uploads);
+                sub.most_recent_videos = most_recent_videos;
+                };
+            promises.push(promise());
         }
+        await Promise.allSettled(promises);
+        hasBeenCalled = true;
         return subs;
     }
 
@@ -156,6 +175,10 @@ interface Video {
         high: YoutubeThumbnail,
         medium: YoutubeThumbnail
     },
+    resourceId: {
+        kind: string,
+        videoId: string
+    }
     channelTitle: string,
     liveBroadcastContent: string
 }
@@ -175,7 +198,7 @@ async function getRecentVideos(uploadsId: string): Promise<Array<Video>> {
         let items = result.result.items;
         return items.map(i => i.snippet);
     }
-    return null;
+    return [null, null, null];
 }
 
 
@@ -186,7 +209,8 @@ function useSubscriptions(): {subscriptions: Array<YoutubeChannel>, isLoading: b
         revalidateOnReconnect: false,
         refreshInterval: 0,
         refreshWhenHidden: false,
-        refreshWhenOffline: false
+        refreshWhenOffline: false,
+        isPaused: () => hasBeenCalled
     });
 
 
