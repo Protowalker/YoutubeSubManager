@@ -2,6 +2,7 @@ import {
   Avatar,
   Box,
   Button,
+  Flex,
   Grid,
   GridItem,
   Heading,
@@ -13,6 +14,7 @@ import { useCallback, useState } from "react";
 import useSWR from "swr";
 import { Subscription } from "../Hooks/useSubscriptions";
 import { YoutubeChannel } from "../Interfaces/YoutubeInterfaces";
+import Video from "./YoutubeVideo";
 
 export default function YoutubeChannelListing(props: {
   subscription: Subscription;
@@ -32,86 +34,85 @@ export default function YoutubeChannelListing(props: {
 
   return (
     <Grid
-      width="100%"
       templateRows="1"
-      templateColumns="repeat(12, 1fr)"
+      templateColumns="repeat(24, 1fr)"
       gap="1rem"
       alignItems="center"
       justifyItems="center"
       bgColor="red.700"
       p="1rem"
+      width="90%"
     >
-      <a
+      <GridItem
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="space-between"
+        colSpan={2}
+        width="100%"
+        as="a"
         href={channelFeed.url}
         target="_blank"
         rel="noopener noreferrer"
         title={channelFeed.name}
       >
-        <GridItem
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="space-between"
-          colSpan={1}
-        >
-          <Avatar src={props.subscription.snippet.thumbnails.default.url} />
-          <Heading size="md" textAlign="center">
-            {channelFeed.name}
-          </Heading>
-        </GridItem>
-      </a>
-
-      {channelFeed.videos.slice(0, 3).map((video) => (
-        <GridItem
-          flexDirection="column"
-          key={video.url}
-          colSpan={2}
-          justifySelf="stretch"
-        >
-          <a
-            href={channelFeed.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={video.title}
-          >
-            <Box pb="56.25%" overflow="hidden" position="relative">
-              <Box
-                position="absolute"
-                top="-16.75%"
-                bottom="0"
-                left="0"
-                right="0"
-              >
-                <Image src={video.thumbnail} />
-              </Box>
-            </Box>
-            <Text textOverflow="ellipsis" noOfLines={1}>
-              {video.title}
-            </Text>
-          </a>
-        </GridItem>
-      ))}
-      <GridItem>
+        <Avatar src={props.subscription.snippet.thumbnails.default.url} />
+        <Heading size="md" textAlign="center" wordBreak="break-word">
+          {channelFeed.name}
+        </Heading>
+      </GridItem>
+      <GridItem
+        colStart={3}
+        colSpan={12}
+        display="flex"
+        flexDirection="column"
+        gap="1rem"
+        alignItems="start"
+        width="100%"
+      >
+        <Heading size="md">Most Recent Videos</Heading>
+        <Flex gap="1rem" alignItems="center" width="100%">
+          {channelFeed.videos.slice(0, 3).map((video) => (
+            <Video video={video} key={video.url} channelUrl={channelFeed.url} />
+          ))}
+        </Flex>
+      </GridItem>
+      {/* <GridItem
+        colStart={16}
+        colSpan={4}
+        display="flex"
+        width="100%"
+        gap="1rem"
+        alignItems="center"
+        flexDirection="column"
+      >
+        <Heading size="md">Last watched by you</Heading>
+        <Video channelUrl={channelFeed.url} video={channelFeed.videos[0]} />
+      </GridItem> */}
+      <GridItem colStart={16}>
         <Button
           bgColor={subscribed ? "red.800" : "gray.300"}
           onClick={(ev) => {
-              if(processingOperation === true)
-              return;
-              setProcessingOperation(true);
-              if(subscribed === true) {
-                  unsubscribeFromChannel(props.subscription.id).then(() => {
-                      setSubscribed(false);
-                      setProcessingOperation(false);
-                  });
-              } else {
-                  subscribeToChannel(props.subscription).then(() => {
-                      setSubscribed(true);
-                      setProcessingOperation(false);
-                  });
-              }
+            if (processingOperation === true) return;
+            setProcessingOperation(true);
+            if (subscribed === true) {
+              unsubscribeFromChannel(props.subscription.id).then(() => {
+                setSubscribed(false);
+                setProcessingOperation(false);
+              });
+            } else {
+              subscribeToChannel(props.subscription).then(() => {
+                setSubscribed(true);
+                setProcessingOperation(false);
+              });
+            }
           }}
         >
-          {processingOperation ? "Processing..." : subscribed ? "Unsubscribe" : "Subscribe"}
+          {processingOperation
+            ? "Processing..."
+            : subscribed
+            ? "Unsubscribe"
+            : "Subscribe"}
         </Button>
       </GridItem>
     </Grid>
